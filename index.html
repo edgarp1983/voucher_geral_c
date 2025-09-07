@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Sistema de Vouchers para Agência de Viagens">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icon-192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="512x512" href="icon-512.svg">
+    <link rel="apple-touch-icon" href="icon-192.svg">
+    
+    <title>Sistema de Vouchers - Agência de Viagens</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Carregando Sistema de Vouchers...</p>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app-container" style="display: none;">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-plane"></i> Sistema de Vouchers</h1>
+                <button id="config-btn" class="config-btn" title="Configurações da Agência">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Tela de Configuração Inicial -->
+            <section id="config-screen" class="screen config-screen">
+                <div class="screen-header">
+                    <h2><i class="fas fa-building"></i> Gerenciamento de Agências</h2>
+                    <p>Configure suas agências e seus respectivos templates PDF</p>
+                </div>
+                
+                <!-- Lista de Agências Cadastradas -->
+                <div class="agencies-list-section">
+                    <h3><i class="fas fa-list"></i> Agências Cadastradas</h3>
+                    <div id="agencies-list" class="agencies-list">
+                        <!-- Agências serão carregadas aqui dinamicamente -->
+                    </div>
+                </div>
+                
+                <!-- Formulário para Adicionar Nova Agência -->
+                <div class="add-agency-section">
+                    <h3><i class="fas fa-plus-circle"></i> Adicionar Nova Agência</h3>
+                    <form id="agency-config-form" class="config-form">
+                        
+                        <div class="form-group">
+                            <label for="agency-name">Nome da Agência *</label>
+                            <input type="text" id="agency-name" required class="form-input" placeholder="Digite o nome da agência">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pdf-template">Template PDF *</label>
+                            <input type="file" id="pdf-template" accept=".pdf" class="file-input" required>
+                            <div id="pdf-template-status" class="template-status"></div>
+                            <small class="form-help">Selecione o arquivo PDF com os campos nomeados para esta agência</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Adicionar Agência
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Botão para ir para os vouchers -->
+                <div class="navigation-section">
+                    <button id="go-to-vouchers-btn" class="btn btn-success btn-large">
+                        <i class="fas fa-arrow-right"></i> Continuar para Vouchers
+                    </button>
+                    <p class="navigation-help">Após configurar pelo menos uma agência, você pode começar a criar vouchers</p>
+                </div>
+            </section>
+
+            <!-- Tela Principal - Lista de Vouchers -->
+            <section id="vouchers-list-screen" class="screen vouchers-screen" style="display: none;">
+                <div class="screen-header">
+                    <h2><i class="fas fa-ticket-alt"></i> Meus Vouchers</h2>
+                    <button id="new-voucher-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Novo Voucher
+                    </button>
+                </div>
+                
+                <div id="vouchers-list" class="vouchers-list">
+                    <!-- Lista de vouchers será carregada aqui -->
+                </div>
+                
+                <div id="empty-state" class="empty-state">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3>Nenhum voucher criado ainda</h3>
+                    <p>Clique em "Novo Voucher" para começar</p>
+                </div>
+            </section>
+
+            <!-- Tela de Criação/Edição de Voucher -->
+            <section id="voucher-form-screen" class="screen voucher-form-screen" style="display: none;">
+                <div class="screen-header">
+                    <button id="back-to-list-btn" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 id="voucher-form-title"><i class="fas fa-edit"></i> Novo Voucher</h2>
+                    <button id="generate-pdf-btn" class="btn btn-success" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Gerar PDF
+                    </button>
+                </div>
+                
+                <form id="voucher-form" class="voucher-form">
+                    <!-- Seção 0: Seleção de Agência e Template -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-building"></i> Agência e Template</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="selected-agency">Selecione a Agência *</label>
+                                <select id="selected-agency" class="form-select" required>
+                                    <option value="">Selecione uma agência...</option>
+                                    <!-- Opções serão carregadas dinamicamente -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="selected-template">Selecione o Template *</label>
+                                <select id="selected-template" class="form-select" required>
+                                    <option value="">Primeiro selecione uma agência...</option>
+                                    <!-- Opções serão carregadas dinamicamente -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 1: Destinos -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-map-marker-alt"></i> Destinos</h3>
+                        <div id="destinations-container" class="destinations-container">
+                            <div class="destination-row">
+                                <div class="form-group">
+                                    <label>Destino</label>
+                                    <input type="text" name="destination" class="form-input autocomplete-input" data-field="destination">
+                                </div>
+                                <div class="form-group">
+                                    <label>Data</label>
+                                    <input type="date" name="date" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label>Horário</label>
+                                    <input type="time" name="time" class="form-input">
+                                </div>
+                                <button type="button" class="remove-destination-btn" title="Remover">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-destination-btn" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Adicionar Destino
+                        </button>
+                    </div>
+
+                    <!-- Seção 2: Embarque e Passageiros -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-users"></i> Embarque e Passageiros</h3>
+                        
+                        <div class="form-group">
+                            <label for="boarding-location">Local de Embarque</label>
+                            <input type="text" id="boarding-location" class="form-input autocomplete-input" data-field="boarding-location">
+                        </div>
+                        
+
+                        
+                        <div id="passengers-container" class="passengers-container">
+                            <div class="passenger-row">
+                                <label>PAX 1</label>
+                                <input type="text" name="passenger" class="form-input autocomplete-input" data-field="passenger">
+                            </div>
+                        </div>
+                        <button type="button" id="add-passenger-btn" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Adicionar Passageiro
+                        </button>
+                    </div>
+
+                    <!-- Seção 3: Quantidade de Passageiros -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-calculator"></i> Quantidade de Passageiros</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adults">Adultos</label>
+                                <input type="number" id="adults" min="0" value="0" class="form-input passenger-count">
+                            </div>
+                            <div class="form-group">
+                                <label for="children">Crianças (4-9 anos)</label>
+                                <input type="number" id="children" min="0" value="0" class="form-input passenger-count">
+                            </div>
+                            <div class="form-group">
+                                <label for="infants">Colos</label>
+                                <input type="number" id="infants" min="0" value="0" class="form-input passenger-count">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="total-passengers">Total de Passageiros</label>
+                            <input type="number" id="total-passengers" readonly class="form-input total-field">
+                        </div>
+                    </div>
+
+                    <!-- Seção 4: Financeiro e Observações -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-dollar-sign"></i> Valores e Observações</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="total-amount">Total a Pagar (R$)</label>
+                                <input type="number" id="total-amount" step="0.01" min="0" class="form-input money-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="pre-booking">Pré Reserva (R$)</label>
+                                <input type="number" id="pre-booking" step="0.01" min="0" class="form-input money-input">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="remaining-amount">Falta Pagar (R$)</label>
+                            <input type="number" id="remaining-amount" readonly step="0.01" class="form-input total-field">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="observations">Observações</label>
+                            <textarea id="observations" class="form-textarea autocomplete-input" data-field="observations" rows="4"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Seção 5: Dados do Contratante -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-user"></i> Dados do Contratante</h3>
+                        
+                        <div class="form-group">
+                            <label for="contract-date">Data do Contrato</label>
+                            <input type="date" id="contract-date" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contractor-name">Nome do Contratante *</label>
+                            <input type="text" id="contractor-name" required class="form-input autocomplete-input" data-field="contractor-name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contractor-cpf">CPF do Contratante</label>
+                            <input type="text" id="contractor-cpf" class="form-input" placeholder="000.000.000-00">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contractor-phone1">Celular 1 *</label>
+                                <input type="tel" id="contractor-phone1" required class="form-input autocomplete-input" data-field="contractor-phone1" placeholder="(85) 99999-9999">
+                            </div>
+                            <div class="form-group">
+                                <label for="contractor-phone2">Celular 2</label>
+                                <input type="tel" id="contractor-phone2" class="form-input autocomplete-input" data-field="contractor-phone2" placeholder="(85) 99999-9999">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contractor-email">Email do Contratante</label>
+                            <input type="email" id="contractor-email" class="form-input autocomplete-input" data-field="contractor-email">
+                        </div>
+                    </div>
+
+                    <!-- Ações do Formulário -->
+                    <div class="form-actions">
+                        <button type="button" id="save-voucher-btn" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Voucher
+                        </button>
+                        <button type="button" id="preview-pdf-btn" class="btn btn-success">
+                            <i class="fas fa-eye"></i> Visualizar PDF
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Autocomplete Suggestions -->
+    <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="app.js"></script>
+    
+
+</body>
+</html>

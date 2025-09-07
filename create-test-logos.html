@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Criar Logos de Teste</title>
+</head>
+<body>
+    <h2>Logos de Teste</h2>
+    <canvas id="agencyCanvas" width="120" height="80" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    <canvas id="cadasturCanvas" width="120" height="80" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    
+    <div>
+        <button onclick="downloadLogos()">Baixar Logos PNG</button>
+        <button onclick="copyBase64()">Copiar Base64</button>
+    </div>
+    
+    <div id="base64Output" style="margin-top: 20px; font-family: monospace; font-size: 12px;"></div>
+    
+    <script>
+        // Criar logo da agência
+        const agencyCanvas = document.getElementById('agencyCanvas');
+        const agencyCtx = agencyCanvas.getContext('2d');
+        
+        // Fundo azul
+        agencyCtx.fillStyle = '#2563eb';
+        agencyCtx.fillRect(0, 0, 120, 80);
+        
+        // Texto
+        agencyCtx.fillStyle = 'white';
+        agencyCtx.font = 'bold 14px Arial';
+        agencyCtx.textAlign = 'center';
+        agencyCtx.fillText('CVIAGENS', 60, 35);
+        
+        agencyCtx.font = '10px Arial';
+        agencyCtx.fillText('Agência de Viagens', 60, 55);
+        
+        // Criar logo do Cadastur
+        const cadasturCanvas = document.getElementById('cadasturCanvas');
+        const cadasturCtx = cadasturCanvas.getContext('2d');
+        
+        // Fundo verde
+        cadasturCtx.fillStyle = '#16a34a';
+        cadasturCtx.fillRect(0, 0, 120, 80);
+        
+        // Círculo amarelo
+        cadasturCtx.fillStyle = '#fbbf24';
+        cadasturCtx.beginPath();
+        cadasturCtx.arc(60, 30, 18, 0, 2 * Math.PI);
+        cadasturCtx.fill();
+        
+        // Texto
+        cadasturCtx.fillStyle = 'white';
+        cadasturCtx.font = 'bold 12px Arial';
+        cadasturCtx.textAlign = 'center';
+        cadasturCtx.fillText('CADASTUR', 60, 58);
+        
+        cadasturCtx.font = '8px Arial';
+        cadasturCtx.fillText('MINISTÉRIO DO TURISMO', 60, 70);
+        
+        function downloadLogos() {
+            // Download logo da agência
+            const agencyLink = document.createElement('a');
+            agencyLink.download = 'logo-agencia.png';
+            agencyLink.href = agencyCanvas.toDataURL();
+            agencyLink.click();
+            
+            // Download logo do Cadastur
+            const cadasturLink = document.createElement('a');
+            cadasturLink.download = 'logo-cadastur.png';
+            cadasturLink.href = cadasturCanvas.toDataURL();
+            cadasturLink.click();
+        }
+        
+        function copyBase64() {
+            const agencyBase64 = agencyCanvas.toDataURL();
+            const cadasturBase64 = cadasturCanvas.toDataURL();
+            
+            const output = document.getElementById('base64Output');
+            output.innerHTML = `
+                <h3>Base64 das Logos:</h3>
+                <p><strong>Logo Agência:</strong></p>
+                <textarea style="width: 100%; height: 100px;">${agencyBase64}</textarea>
+                <p><strong>Logo Cadastur:</strong></p>
+                <textarea style="width: 100%; height: 100px;">${cadasturBase64}</textarea>
+            `;
+        }
+        
+        // Gerar automaticamente ao carregar
+        window.onload = function() {
+            copyBase64();
+        };
+    </script>
+</body>
+</html>

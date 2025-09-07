@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" width="120" height="80">
+  <!-- Fundo azul -->
+  <rect width="120" height="80" fill="#2563eb" rx="8"/>
+  
+  <!-- Onda decorativa -->
+  <path d="M0 60 Q30 45 60 60 T120 60 V80 H0 Z" fill="#1d4ed8"/>
+  
+  <!-- Avião estilizado -->
+  <g transform="translate(60,25)">
+    <!-- Corpo do avião -->
+    <ellipse cx="0" cy="0" rx="25" ry="8" fill="white"/>
+    <!-- Asas -->
+    <ellipse cx="-5" cy="0" rx="15" ry="4" fill="#f1f5f9"/>
+    <!-- Cauda -->
+    <path d="M20 0 L30 -5 L30 5 Z" fill="white"/>
+  </g>
+  
+  <!-- Texto -->
+  <text x="60" y="55" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">CVIAGENS</text>
+</svg>

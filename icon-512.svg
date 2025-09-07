@@ -1,0 +1,95 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.3)"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#gradient)"/>
+  
+  <!-- Main Content -->
+  <g transform="translate(128, 128)">
+    <!-- Plane Icon -->
+    <g transform="translate(0, -20)">
+      <!-- Plane Body -->
+      <path d="M128 32L96 64H64L76 76H96L128 44L160 76H192L180 64H148L128 32Z" fill="white" opacity="0.95" filter="url(#shadow)"/>
+      
+      <!-- Plane Wings -->
+      <path d="M42 85L85 64L128 85L171 64L214 85L171 106L128 85L85 106L42 85Z" fill="white" opacity="0.9" filter="url(#shadow)"/>
+      
+      <!-- Plane Tail -->
+      <path d="M128 32L118 42L138 42L128 32Z" fill="white" opacity="0.8"/>
+    </g>
+    
+    <!-- Ticket/Voucher -->
+    <g transform="translate(0, 80)">
+      <!-- Main Ticket Body -->
+      <rect x="32" y="40" width="192" height="80" rx="12" fill="white" opacity="0.95" filter="url(#shadow)"/>
+      
+      <!-- Ticket Perforations (dotted line) -->
+      <g opacity="0.7">
+        <circle cx="42" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="58" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="74" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="90" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="106" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="122" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="138" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="154" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="170" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="186" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="202" cy="80" r="4" fill="url(#gradient)"/>
+        <circle cx="218" cy="80" r="4" fill="url(#gradient)"/>
+      </g>
+      
+      <!-- Left Section - Destination Info -->
+      <g transform="translate(42, 50)">
+        <rect x="0" y="0" width="64" height="6" rx="3" fill="url(#gradient)" opacity="0.8"/>
+        <rect x="0" y="12" width="48" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+        <rect x="0" y="24" width="56" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+      </g>
+      
+      <!-- Right Section - Price/Date Info -->
+      <g transform="translate(150, 50)">
+        <rect x="0" y="0" width="48" height="6" rx="3" fill="url(#gradient)" opacity="0.8"/>
+        <rect x="0" y="12" width="36" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+        <rect x="0" y="24" width="42" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+      </g>
+      
+      <!-- Bottom Section -->
+      <g transform="translate(42, 90)">
+        <rect x="0" y="0" width="64" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+        <rect x="0" y="12" width="48" height="6" rx="3" fill="url(#gradient)" opacity="0.4"/>
+        
+        <rect x="108" y="0" width="48" height="6" rx="3" fill="url(#gradient)" opacity="0.6"/>
+        <rect x="108" y="12" width="36" height="6" rx="3" fill="url(#gradient)" opacity="0.4"/>
+      </g>
+    </g>
+    
+    <!-- Decorative Elements -->
+    <g opacity="0.3">
+      <!-- Small planes in background -->
+      <g transform="translate(20, 20) scale(0.3)">
+        <path d="M32 8L24 16H16L19 19H24L32 11L40 19H48L45 16H37L32 8Z" fill="white"/>
+      </g>
+      
+      <g transform="translate(200, 30) scale(0.3)">
+        <path d="M32 8L24 16H16L19 19H24L32 11L40 19H48L45 16H37L32 8Z" fill="white"/>
+      </g>
+      
+      <g transform="translate(30, 180) scale(0.3)">
+        <path d="M32 8L24 16H16L19 19H24L32 11L40 19H48L45 16H37L32 8Z" fill="white"/>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Bottom Text/Brand -->
+  <g transform="translate(256, 450)">
+    <text x="0" y="0" text-anchor="middle" fill="white" opacity="0.8" font-family="Arial, sans-serif" font-size="24" font-weight="600">VOUCHERS</text>
+  </g>
+</svg>

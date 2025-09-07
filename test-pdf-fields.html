@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Campos PDF</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <h1>Teste de Campos do PDF Template</h1>
+    <input type="file" id="pdfFile" accept=".pdf">
+    <button onclick="analyzePDF()">Analisar Campos do PDF</button>
+    <div id="results"></div>
+
+    <script>
+        async function analyzePDF() {
+            const fileInput = document.getElementById('pdfFile');
+            const resultsDiv = document.getElementById('results');
+            
+            if (!fileInput.files[0]) {
+                alert('Por favor, selecione um arquivo PDF');
+                return;
+            }
+
+            try {
+                const file = fileInput.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                
+                // Obter formulário
+                const form = pdfDoc.getForm();
+                const fields = form.getFields();
+                
+                let html = '<h2>Campos encontrados no PDF:</h2><ul>';
+                
+                fields.forEach((field, index) => {
+                    const name = field.getName();
+                    const type = field.constructor.name;
+                    html += `<li><strong>${name}</strong> (${type})</li>`;
+                });
+                
+                html += '</ul>';
+                html += `<p><strong>Total de campos:</strong> ${fields.length}</p>`;
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Erro ao analisar PDF:', error);
+                resultsDiv.innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

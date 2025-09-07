@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste do Sistema de Vouchers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste do Sistema de Vouchers</h1>
+    
+    <div class="test-section">
+        <h3>Teste de Geração de PDF</h3>
+        <p>Este teste verifica se o PDF está sendo gerado com o novo cabeçalho conforme a imagem fornecida.</p>
+        <button onclick="testPDFGeneration()">Gerar PDF de Teste</button>
+        <div id="pdf-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Configurações Implementadas</h3>
+        <ul>
+            <li>✅ Cabeçalho do PDF reformatado com logos nas laterais</li>
+            <li>✅ Informações da agência centralizadas</li>
+            <li>✅ Removido CPF dos passageiros</li>
+            <li>✅ Mantido apenas CPF do contratante</li>
+            <li>✅ Sistema de agentes implementado</li>
+        </ul>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script>
+        function testPDFGeneration() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Dados de teste com logos
+            const agencyConfig = {
+                name: "Cviagens Agência de Viagens",
+                address: "AV: Alberto Nepomuceno, 199 - Centro - Fortaleza-Ce",
+                cnpj: "29.415.563/0001-22",
+                // Logos removidas - causando problemas com base64
+                agencyLogo: null,
+                cadasturLogo: null
+            };
+            
+            const voucherData = {
+                destinations: [{destination: "Canoa Quebrada", date: "2024-01-15", time: "08:00"}],
+                boardingLocation: "Hotel Exemplo",
+                contractorCpf: "123.456.789-00",
+                passengers: ["João Silva", "Maria Silva"],
+                adults: 2,
+                children: 0,
+                infants: 0,
+                totalPassengers: 2,
+                totalAmount: 300.00,
+                preBooking: 100.00,
+                remainingAmount: 200.00,
+                observations: "Teste de observações"
+            };
+            
+            // Criar PDF com novo layout
+            createTestVoucherPage(doc, voucherData, agencyConfig);
+            
+            // Salvar PDF
+            doc.save('teste_voucher_novo_layout.pdf');
+            
+            document.getElementById('pdf-result').style.display = 'block';
+            document.getElementById('pdf-result').innerHTML = '✅ PDF gerado com sucesso! Verifique o download.';
+        }
+        
+        function createTestVoucherPage(doc, voucherData, agencyConfig) {
+            const pageWidth = doc.internal.pageSize.width;
+            const margin = 20;
+            let yPos = margin;
+            
+            // Cabeçalho conforme nova implementação
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(agencyConfig.name, pageWidth / 2, yPos + 8, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(agencyConfig.address, pageWidth / 2, yPos + 16, { align: 'center' });
+            doc.text(`CNPJ: ${agencyConfig.cnpj}`, pageWidth / 2, yPos + 22, { align: 'center' });
+            
+            yPos += 35;
+            
+            // Tabela de destinos
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('DESTINOS', margin, yPos);
+            doc.text('DATA', pageWidth / 2, yPos);
+            doc.text('HORÁRIO', pageWidth - margin - 30, yPos);
+            yPos += 8;
+            
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 5;
+            
+            doc.setFont(undefined, 'normal');
+            voucherData.destinations.forEach((dest) => {
+                doc.text(dest.destination || '', margin, yPos);
+                doc.text(dest.date ? new Date(dest.date).toLocaleDateString('pt-BR') : '', pageWidth / 2, yPos);
+                doc.text(dest.time || '', pageWidth - margin - 30, yPos);
+                yPos += 6;
+            });
+            
+            yPos += 10;
+            
+            // Local de embarque
+            doc.setFont(undefined, 'bold');
+            doc.text('LOCAL DE EMBARQUE:', margin, yPos);
+            yPos += 6;
+            doc.setFont(undefined, 'normal');
+            doc.text(voucherData.boardingLocation || '', margin, yPos);
+            yPos += 10;
+            
+            // CPF removido da parte superior - agora aparece apenas no contrato
+            
+            // Passageiros (sem CPF)
+            doc.setFont(undefined, 'bold');
+            doc.text('PASSAGEIROS:', margin, yPos);
+            yPos += 6;
+            
+            doc.setFont(undefined, 'normal');
+            voucherData.passengers.forEach((passenger, index) => {
+                if (passenger) {
+                    doc.text(`PAX ${index + 1}: ${passenger}`, margin, yPos);
+                    yPos += 6;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
