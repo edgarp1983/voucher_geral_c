@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Debug PDF</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .btn { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Debug - Geração de PDF</h1>
+    
+    <button class="btn" onclick="testPDFLib()">1. Testar PDFLib</button>
+    <button class="btn" onclick="testSimplePDF()">2. Gerar PDF Simples</button>
+    <button class="btn" onclick="testVoucherPDF()">3. Testar Voucher PDF</button>
+    <button class="btn" onclick="clearLogs()">Limpar Logs</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        function log(message, isError = false) {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = isError ? 'log error' : 'log';
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        function testPDFLib() {
+            log('🔍 Testando disponibilidade do PDFLib...');
+            
+            if (typeof PDFLib === 'undefined') {
+                log('❌ PDFLib não está carregado!', true);
+                return;
+            }
+            
+            log('✅ PDFLib está disponível');
+            log(`📚 Versão: ${PDFLib.version || 'Desconhecida'}`);
+            log(`🔧 PDFDocument disponível: ${typeof PDFLib.PDFDocument !== 'undefined'}`);
+            log(`🎨 rgb disponível: ${typeof PDFLib.rgb !== 'undefined'}`);
+        }
+
+        async function testSimplePDF() {
+            try {
+                log('🚀 Iniciando teste de PDF simples...');
+                
+                if (typeof PDFLib === 'undefined') {
+                    throw new Error('PDFLib não está carregado');
+                }
+
+                const { PDFDocument, rgb } = PDFLib;
+                log('✅ PDFLib importado com sucesso');
+
+                const pdfDoc = await PDFDocument.create();
+                log('✅ Documento PDF criado');
+
+                const page = pdfDoc.addPage([595, 842]);
+                log('✅ Página adicionada');
+
+                page.drawText('Teste de PDF - Funcionando!', {
+                    x: 50,
+                    y: 750,
+                    size: 20,
+                    color: rgb(0, 0, 0)
+                });
+                log('✅ Texto adicionado');
+
+                const pdfBytes = await pdfDoc.save();
+                log('✅ PDF salvo em bytes');
+
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'teste-simples.pdf';
+                a.click();
+                
+                log('✅ PDF baixado com sucesso!');
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, true);
+                console.error('Erro completo:', error);
+            }
+        }
+
+        async function testVoucherPDF() {
+            try {
+                log('🎫 Testando geração de voucher...');
+                
+                // Simular dados do voucher
+                const voucherData = {
+                    agencyName: 'Agência Teste',
+                    contractorName: 'João Silva',
+                    phone: '(85) 99999-9999',
+                    destinations: [
+                        { destination: 'Canoa Quebrada', date: '2024-01-15', time: '08:00' }
+                    ],
+                    totalAmount: 150.00,
+                    preBooking: 50.00,
+                    remainingAmount: 100.00
+                };
+                
+                log('📋 Dados do voucher preparados');
+                
+                if (typeof PDFLib === 'undefined') {
+                    throw new Error('PDFLib não está carregado');
+                }
+
+                const { PDFDocument, rgb } = PDFLib;
+                const pdfDoc = await PDFDocument.create();
+                const page = pdfDoc.addPage([595, 842]);
+                
+                log('✅ Documento base criado');
+
+                // Adicionar conteúdo básico do voucher
+                page.drawText('VOUCHER DE VIAGEM', {
+                    x: 200,
+                    y: 750,
+                    size: 20,
+                    color: rgb(0, 0, 0)
+                });
+
+                page.drawText(`Agência: ${voucherData.agencyName}`, {
+                    x: 50,
+                    y: 700,
+                    size: 12,
+                    color: rgb(0, 0, 0)
+                });
+
+                page.drawText(`Contratante: ${voucherData.contractorName}`, {
+                    x: 50,
+                    y: 680,
+                    size: 12,
+                    color: rgb(0, 0, 0)
+                });
+
+                log('✅ Conteúdo adicionado');
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'voucher-teste.pdf';
+                a.click();
+                
+                log('✅ Voucher PDF gerado com sucesso!');
+                
+            } catch (error) {
+                log(`❌ Erro na geração do voucher: ${error.message}`, true);
+                console.error('Erro completo:', error);
+            }
+        }
+
+        // Testar PDFLib automaticamente ao carregar
+        window.onload = function() {
+            log('🌐 Página carregada');
+            setTimeout(testPDFLib, 1000);
+        };
+    </script>
+</body>
+</html>

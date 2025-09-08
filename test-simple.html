@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples PDF</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <h1>Teste Simples de Geração de PDF</h1>
+    <button id="testBtn">Testar PDF</button>
+    <div id="log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            log('🔄 Iniciando teste...');
+            
+            try {
+                // Verificar se PDFLib está disponível
+                log('📚 Verificando PDFLib: ' + typeof PDFLib);
+                
+                if (typeof PDFLib === 'undefined') {
+                    log('❌ PDFLib não está carregado!');
+                    return;
+                }
+                
+                const { PDFDocument } = PDFLib;
+                log('📄 PDFDocument disponível: ' + typeof PDFDocument);
+                
+                // Criar um PDF simples
+                const pdfDoc = await PDFDocument.create();
+                log('✅ PDF criado com sucesso');
+                
+                // Adicionar uma página
+                const page = pdfDoc.addPage([600, 400]);
+                log('✅ Página adicionada');
+                
+                // Adicionar texto
+                page.drawText('Teste de PDF', {
+                    x: 50,
+                    y: 350,
+                    size: 30
+                });
+                log('✅ Texto adicionado');
+                
+                // Configurar metadados
+                pdfDoc.setTitle('Teste PDF');
+                pdfDoc.setSubject('Teste');
+                pdfDoc.setCreator('Teste');
+                pdfDoc.setProducer('PDF-lib');
+                pdfDoc.setCreationDate(new Date());
+                pdfDoc.setModificationDate(new Date());
+                
+                // Testar keywords como array
+                try {
+                    pdfDoc.setKeywords(['teste', 'pdf']);
+                    log('✅ Keywords como array funcionou');
+                } catch (e) {
+                    log('❌ Erro com keywords: ' + e.message);
+                }
+                
+                // Salvar PDF
+                const pdfBytes = await pdfDoc.save();
+                log('✅ PDF salvo, tamanho: ' + pdfBytes.length + ' bytes');
+                
+                // Criar blob e download
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'teste-simples.pdf';
+                a.click();
+                
+                log('✅ Download iniciado!');
+                
+            } catch (error) {
+                log('❌ Erro: ' + error.message);
+                console.error('Erro completo:', error);
+            }
+        });
+    </script>
+</body>
+</html>

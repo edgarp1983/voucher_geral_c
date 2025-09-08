@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug PDF Generation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Debug PDF Generation</h1>
+    <button id="testPDF">Testar Geração de PDF</button>
+    <button id="checkData">Verificar Dados</button>
+    <div id="output"></div>
+
+    <script>
+        // Simular dados básicos para teste
+        const testData = {
+            selectedAgency: 'test-agency',
+            selectedTemplate: 'test-template',
+            contractorName: 'João Silva',
+            contractorPhone1: '(11) 99999-9999',
+            destinations: [{ name: 'São Paulo', date: '2024-01-15' }]
+        };
+
+        const testAgencyConfig = {
+            name: 'Agência Teste',
+            templates: [{
+                id: 'test-template',
+                name: 'Template Teste'
+            }]
+        };
+
+        document.getElementById('checkData').addEventListener('click', () => {
+            const output = document.getElementById('output');
+            output.innerHTML = `
+                <h3>Dados de Teste:</h3>
+                <pre>${JSON.stringify(testData, null, 2)}</pre>
+                <h3>Config da Agência:</h3>
+                <pre>${JSON.stringify(testAgencyConfig, null, 2)}</pre>
+                <h3>LocalStorage agencyConfig:</h3>
+                <pre>${localStorage.getItem('agencyConfig') || 'Não encontrado'}</pre>
+                <h3>LocalStorage agencies:</h3>
+                <pre>${localStorage.getItem('agencies') || 'Não encontrado'}</pre>
+            `;
+        });
+
+        document.getElementById('testPDF').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Testando geração de PDF...</p>';
+            
+            try {
+                // Teste básico do jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Testar metadados básicos
+                doc.setProperties({
+                    title: 'Teste PDF',
+                    subject: 'Teste de geração',
+                    author: 'Sistema de Vouchers',
+                    creator: 'Voucher System v1.0',
+                    producer: 'jsPDF + Voucher System'
+                });
+                
+                // Testar keywords como array
+                try {
+                    doc.setKeywords(['teste', 'pdf', 'voucher']);
+                    output.innerHTML += '<p>✅ Keywords como array funcionou</p>';
+                } catch (e) {
+                    output.innerHTML += `<p>❌ Erro com keywords: ${e.message}</p>`;
+                }
+                
+                doc.text('Teste de PDF', 20, 20);
+                
+                // Tentar salvar
+                const pdfBlob = doc.output('blob');
+                const url = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'teste.pdf';
+                a.click();
+                
+                output.innerHTML += '<p>✅ PDF gerado com sucesso!</p>';
+                
+            } catch (error) {
+                output.innerHTML += `<p>❌ Erro na geração: ${error.message}</p>`;
+                console.error('Erro completo:', error);
+            }
+        });
+    </script>
+</body>
+</html>
