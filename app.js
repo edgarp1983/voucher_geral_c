@@ -453,27 +453,56 @@ class VoucherSystem {
                     <div class="agency-templates">${agency.templates.length} template(s) cadastrado(s)</div>
                 </div>
                 <div class="agency-actions">
-                    <button class="btn btn-danger btn-small" onclick="voucherSystem.removeAgency('${agency.id}')">
+                    <button class="btn btn-danger btn-small remove-agency-btn" data-agency-id="${agency.id}">
                         <i class="fas fa-trash"></i> Remover
                     </button>
                 </div>
             </div>
         `).join('');
+        
+        // Adicionar event listeners para os botões de remover
+        const removeButtons = agenciesList.querySelectorAll('.remove-agency-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const agencyId = button.getAttribute('data-agency-id');
+                this.removeAgency(agencyId);
+            });
+        });
     }
     
     removeAgency(agencyId) {
-        if (!confirm('Tem certeza que deseja remover esta agência? Esta ação não pode ser desfeita.')) {
+        // Validar se o ID da agência foi fornecido
+        if (!agencyId) {
+            this.showErrorMessage('ID da agência não fornecido.');
             return;
         }
         
         const agencies = this.getAllAgencies();
-        const updatedAgencies = agencies.filter(agency => agency.id !== agencyId);
         
-        localStorage.setItem('agencies', JSON.stringify(updatedAgencies));
+        // Verificar se a agência existe
+        const agencyToRemove = agencies.find(agency => agency.id === agencyId);
+        if (!agencyToRemove) {
+            this.showErrorMessage('Agência não encontrada.');
+            return;
+        }
         
-        this.showSuccessMessage('Agência removida com sucesso!');
-        this.loadAgenciesList();
-        this.loadAgencyOptions();
+        // Confirmar remoção
+        if (!confirm(`Tem certeza que deseja remover a agência "${agencyToRemove.name}"? Esta ação não pode ser desfeita.`)) {
+            return;
+        }
+        
+        try {
+            const updatedAgencies = agencies.filter(agency => agency.id !== agencyId);
+            localStorage.setItem('agencies', JSON.stringify(updatedAgencies));
+            
+            this.showSuccessMessage('Agência removida com sucesso!');
+            this.loadAgenciesList();
+            this.loadAgencyOptions();
+        } catch (error) {
+            console.error('Erro ao remover agência:', error);
+            this.showErrorMessage('Erro ao remover agência. Tente novamente.');
+        }
     }
 
     getAgencyConfig() {
@@ -1054,11 +1083,15 @@ class VoucherSystem {
             // Gerar o PDF preenchido
             const pdfBytes = await pdfDoc.save();
             
-            // Criar blob com headers corretos para compatibilidade com aplicativos padrão
+            // Criar blob com MIME type correto e propriedades para máxima compatibilidade
             const blob = new Blob([pdfBytes], { 
-                type: 'application/pdf',
-                // Adicionar propriedades para melhor compatibilidade
-                lastModified: Date.now()
+                type: 'application/pdf'
+            });
+            
+            // Garantir que o blob tenha as propriedades corretas
+            Object.defineProperty(blob, 'lastModified', {
+                value: Date.now(),
+                writable: false
             });
             const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
             
@@ -1129,7 +1162,13 @@ class VoucherSystem {
                 
                 // 3. Fallback final: download tradicional
                 if (!success) {
-                    this.downloadFile(blob, fileName);
+                    const downloadSuccess = this.downloadFile(blob, fileName);
+                    
+                    if (!downloadSuccess) {
+                        // Último recurso: mostrar mensagem com instruções
+                        this.showErrorMessage('Não foi possível baixar o PDF automaticamente. Tente usar um navegador diferente ou verifique as configurações de download.');
+                        return;
+                    }
                 }
                 
                 // Mostrar mensagem de sucesso
@@ -1137,8 +1176,27 @@ class VoucherSystem {
                 
             } else {
                 // Para desktop, usar download tradicional
-                this.downloadFile(blob, fileName);
-                this.showSuccessMessage('PDF baixado com sucesso!');
+                const downloadSuccess = this.downloadFile(blob, fileName);
+                
+                if (downloadSuccess) {
+                    this.showSuccessMessage('PDF baixado com sucesso!');
+                } else {
+                    // Fallback para desktop: tentar abrir em nova aba
+                    try {
+                        const url = URL.createObjectURL(blob);
+                        const newWindow = window.open(url, '_blank');
+                        
+                        if (newWindow) {
+                            this.showSuccessMessage('PDF gerado! Abrindo em nova aba. Use "Salvar como" para baixar.');
+                            setTimeout(() => URL.revokeObjectURL(url), 30000);
+                        } else {
+                            this.showErrorMessage('Não foi possível abrir o PDF. Verifique se o bloqueador de pop-ups está desabilitado.');
+                        }
+                    } catch (openError) {
+                        console.error('Erro ao abrir PDF:', openError);
+                        this.showErrorMessage('Erro ao gerar PDF. Tente novamente.');
+                    }
+                }
             }
             
         } catch (error) {
@@ -1148,38 +1206,87 @@ class VoucherSystem {
     }
     
     downloadFile(blob, fileName) {
-        // Função auxiliar para download tradicional com melhor compatibilidade
+        // Função auxiliar para download tradicional com máxima compatibilidade mobile
+        
+        // Garantir que o fileName tenha extensão .pdf
+        if (!fileName.toLowerCase().endsWith('.pdf')) {
+            fileName += '.pdf';
+        }
+        
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+        
+        // Configurar atributos essenciais para compatibilidade
         a.href = url;
         a.download = fileName;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.style.display = 'none';
         
-        // Adicionar atributos para melhor compatibilidade mobile
+        // Atributos críticos para reconhecimento do tipo de arquivo
         a.setAttribute('type', 'application/pdf');
         a.setAttribute('data-downloadurl', `application/pdf:${fileName}:${url}`);
         
+        // Simular Content-Disposition header através de atributos
+        a.setAttribute('data-content-disposition', `attachment; filename="${fileName}"`);
+        a.setAttribute('data-content-type', 'application/pdf');
+        
         document.body.appendChild(a);
         
-        // Usar evento de clique mais robusto
+        // Múltiplas tentativas de clique para máxima compatibilidade
+        let clickSuccess = false;
+        
         try {
+            // Tentativa 1: Click direto
             a.click();
+            clickSuccess = true;
         } catch (clickError) {
-            // Fallback para dispositivos que não suportam click programático
-            const event = new MouseEvent('click', {
-                view: window,
-                bubbles: true,
-                cancelable: true
-            });
-            a.dispatchEvent(event);
+            console.log('Click direto falhou, tentando evento personalizado');
+            
+            try {
+                // Tentativa 2: Evento MouseEvent
+                const event = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0
+                });
+                a.dispatchEvent(event);
+                clickSuccess = true;
+            } catch (eventError) {
+                console.log('Evento MouseEvent falhou, tentando focus + enter');
+                
+                try {
+                    // Tentativa 3: Focus + Enter (para alguns navegadores mobile)
+                    a.focus();
+                    const enterEvent = new KeyboardEvent('keydown', {
+                        key: 'Enter',
+                        code: 'Enter',
+                        keyCode: 13,
+                        which: 13,
+                        bubbles: true
+                    });
+                    a.dispatchEvent(enterEvent);
+                    clickSuccess = true;
+                } catch (focusError) {
+                    console.error('Todas as tentativas de download falharam:', focusError);
+                }
+            }
         }
         
-        document.body.removeChild(a);
+        // Remover elemento após um pequeno delay
+        setTimeout(() => {
+            if (document.body.contains(a)) {
+                document.body.removeChild(a);
+            }
+        }, 100);
         
-        // Limpar URL após um tempo maior para garantir o download
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        // Limpar URL após tempo suficiente para o download
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 10000);
+        
+        return clickSuccess;
     }
     
     async loadSelectedTemplate(templateId) {
