@@ -1079,20 +1079,37 @@ class VoucherSystem {
             const form = pdfDoc.getForm();
             this.fillPDFFields(form, voucherData, agencyConfig);
 
-            // 4. "ACHATAR" (FLATTEN) O FORMULÁRIO
+            // 4. DEFINIR METADADOS PARA MÁXIMA COMPATIBILIDADE
+            // Metadados específicos que ajudam aplicativos móveis a reconhecer o PDF corretamente
+            pdfDoc.setTitle(`Voucher - ${voucherData.contractorName}`);
+            pdfDoc.setSubject('Voucher de Viagem');
+            pdfDoc.setAuthor(agencyConfig?.name || 'Sistema Voucher');
+            pdfDoc.setCreator('Sistema Voucher PWA');
+            pdfDoc.setProducer('PDF-lib');
+            pdfDoc.setCreationDate(new Date());
+            pdfDoc.setModificationDate(new Date());
+            
+            // Adicionar palavras-chave para melhor indexação
+            pdfDoc.setKeywords(['voucher', 'viagem', 'turismo', 'transporte']);
+
+            // 5. "ACHATAR" (FLATTEN) O FORMULÁRIO
             // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
             form.flatten();
 
-            // 5. SALVAR OS BYTES DO PDF FINAL
-            const pdfBytes = await pdfDoc.save();
+            // 6. SALVAR OS BYTES DO PDF FINAL COM CONFIGURAÇÕES OTIMIZADAS
+            const pdfBytes = await pdfDoc.save({
+                useObjectStreams: false, // Melhor compatibilidade com aplicativos antigos
+                addDefaultPage: false,   // Não adicionar páginas extras
+                objectsPerTick: 50       // Otimização de performance
+            });
 
-            // 6. CRIAR O BLOB COM O MIME TYPE CORRETO
+            // 7. CRIAR O BLOB COM O MIME TYPE CORRETO
             // Este é o passo crucial que diz ao navegador/celular que este é um arquivo PDF.
             const blob = new Blob([pdfBytes], {
                 type: 'application/pdf'
             });
 
-            // 7. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
+            // 8. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
             // A API de compartilhamento é a melhor opção para celulares.
             if (navigator.share) {
                 try {
