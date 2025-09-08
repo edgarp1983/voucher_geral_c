@@ -1166,23 +1166,48 @@ class VoucherSystem {
             form.flatten();
 
             // 6. SALVAR COM CONFIGURAÇÕES OTIMIZADAS PARA DISPOSITIVOS MÓVEIS
+            // Configurações específicas para máxima compatibilidade móvel
             const pdfBytes = await pdfDoc.save({
                 useObjectStreams: false,
-                addDefaultPage: false
+                addDefaultPage: false,
+                updateFieldAppearances: false,
+                objectsPerTick: 50,
+                // Configurações específicas para compatibilidade com WhatsApp
+                compress: true,
+                linearize: true,
+                prettyPrint: false
             });
 
-            // 7. CRIAR O BLOB COM O MIME TYPE CORRETO
+            // 7. CRIAR O BLOB COM O MIME TYPE CORRETO E CONFIGURAÇÕES MÓVEIS
             // Este é o passo crucial que diz ao navegador/celular que este é um arquivo PDF.
             const blob = new Blob([pdfBytes], {
-                type: 'application/pdf'
+                type: 'application/pdf',
+                // Adicionar propriedades específicas para mobile
+                endings: 'native'
+            });
+            
+            // Adicionar propriedades específicas para compatibilidade móvel
+            Object.defineProperty(blob, 'name', {
+                value: fileName,
+                writable: false
+            });
+            Object.defineProperty(blob, 'lastModified', {
+                value: Date.now(),
+                writable: false
             });
 
-            // 8. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
+            // 8. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD OTIMIZADA PARA MOBILE
+            // Detectar se é dispositivo móvel
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
             // A API de compartilhamento é a melhor opção para celulares.
-            if (navigator.share) {
+            if (navigator.share && isMobile) {
                 try {
-                    // Criamos um objeto File, que é o formato ideal para a API de compartilhamento
-                    const file = new File([blob], fileName, { type: 'application/pdf' });
+                    // Criamos um objeto File com configurações específicas para mobile
+                    const file = new File([blob], fileName, { 
+                        type: 'application/pdf',
+                        lastModified: Date.now()
+                    });
                     
                     // Verificamos se o navegador pode compartilhar este tipo de arquivo
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1193,6 +1218,17 @@ class VoucherSystem {
                         });
                         this.showSuccessMessage('Voucher compartilhado!');
                         return; // Encerra a função após o sucesso
+                    } else {
+                        // Fallback: tentar compartilhar apenas com URL se files não for suportado
+                        const url = URL.createObjectURL(blob);
+                        await navigator.share({
+                            title: 'Voucher de Viagem',
+                            text: `Segue o voucher para ${voucherData.contractorName}.`,
+                            url: url
+                        });
+                        this.showSuccessMessage('Voucher compartilhado!');
+                        URL.revokeObjectURL(url);
+                        return;
                     }
                 } catch (error) {
                     console.warn('Compartilhamento nativo falhou, tentando download...', error);
@@ -1201,19 +1237,48 @@ class VoucherSystem {
             }
             
             // Se a API de compartilhamento não estiver disponível ou falhar, usamos o download tradicional.
-            // Este método é um "truque" padrão para forçar o download no navegador.
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            
-            // Adiciona ao corpo do documento, clica e remove.
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Limpa a URL do objeto para liberar memória.
-            URL.revokeObjectURL(link.href);
-            this.showSuccessMessage('PDF baixado com sucesso!');
+            // Método otimizado para dispositivos móveis
+            if (isMobile) {
+                // Para dispositivos móveis, abrir em nova aba é mais eficaz
+                const url = URL.createObjectURL(blob);
+                const newWindow = window.open(url, '_blank');
+                
+                if (newWindow) {
+                    // Aguardar um pouco antes de limpar a URL
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 3000);
+                    this.showSuccessMessage('PDF aberto! Use o menu do navegador para compartilhar.');
+                } else {
+                    // Se popup foi bloqueado, usar método tradicional
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 1000);
+                    this.showSuccessMessage('PDF baixado! Verifique seus downloads.');
+                }
+            } else {
+                // Para desktop, usar método tradicional de download
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                URL.revokeObjectURL(link.href);
+                this.showSuccessMessage('PDF baixado com sucesso!');
+            }
 
         } catch (error) {
             console.error('Erro ao gerar PDF:', error);
