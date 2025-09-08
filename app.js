@@ -803,6 +803,10 @@ class VoucherSystem {
             const filteredVouchers = vouchers.filter(v => v.id !== voucherId);
             localStorage.setItem('vouchers', JSON.stringify(filteredVouchers));
             this.loadVouchersList();
+            
+            // Recarregar configurações da agência para atualizar templates disponíveis
+            this.loadAgencyConfig();
+            
             this.showSuccessMessage('Voucher excluído com sucesso!');
         }
     }
@@ -1057,6 +1061,9 @@ class VoucherSystem {
 
     async createPDF(voucherData, agencyConfig) {
         try {
+            // Definir nome do arquivo no início da função
+            const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            
             // Carregar o template selecionado
             const templateBytes = await this.loadSelectedTemplate(voucherData.selectedTemplate);
             
@@ -1082,9 +1089,6 @@ class VoucherSystem {
             
             // Gerar o PDF preenchido
             const pdfBytes = await pdfDoc.save();
-            
-            // Definir nome do arquivo antes de usar
-            const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
             
             // Achatar o PDF para máxima compatibilidade (especialmente WhatsApp)
             const flattenedPdfBytes = await this.flattenPDF(pdfBytes);
