@@ -1272,8 +1272,9 @@ class VoucherSystem {
         // Solução específica para problema do WhatsApp com MIME type
         
         // Garantir que o fileName tenha extensão .pdf
-        if (!fileName.toLowerCase().endsWith('.pdf')) {
-            fileName += '.pdf';
+        let finalFileName = fileName;
+        if (!finalFileName.toLowerCase().endsWith('.pdf')) {
+            finalFileName += '.pdf';
         }
         
         // Detectar se está sendo executado em contexto que pode ser compartilhado via WhatsApp
@@ -1285,17 +1286,17 @@ class VoucherSystem {
         
         // Configurar atributos essenciais para compatibilidade
         a.href = url;
-        a.download = fileName;
+        a.download = finalFileName;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.style.display = 'none';
         
         // Atributos críticos para reconhecimento do tipo de arquivo
         a.setAttribute('type', 'application/pdf');
-        a.setAttribute('data-downloadurl', `application/pdf:${fileName}:${url}`);
+        a.setAttribute('data-downloadurl', `application/pdf:${finalFileName}:${url}`);
         
         // Simular Content-Disposition header através de atributos
-        a.setAttribute('data-content-disposition', `attachment; filename="${fileName}"`);
+        a.setAttribute('data-content-disposition', `attachment; filename="${finalFileName}"`);
         a.setAttribute('data-content-type', 'application/pdf');
         
         // Atributos específicos para melhor reconhecimento em contextos móveis/WhatsApp
