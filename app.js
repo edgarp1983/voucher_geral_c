@@ -1118,17 +1118,18 @@ class VoucherSystem {
             const form = pdfDoc.getForm();
             this.fillPDFFields(form, voucherData, agencyConfig);
 
-            // 4. CONFIGURAR METADADOS COMPLETOS COMPATÍVEIS COM MOBILE
-            // Metadados básicos
+            // 4. CONFIGURAR METADADOS EXATOS CONFORME ESPECIFICADO
+            // Metadados básicos para compatibilidade com celular/WhatsApp
             pdfDoc.setTitle('Voucher PDF');
             pdfDoc.setSubject('Documento PDF Voucher');
-            pdfDoc.setCreator('Sistema de Vouchers');
-            pdfDoc.setProducer('PDF-lib');
+            pdfDoc.setCreator('Aspose Pty Ltd.');
+            pdfDoc.setProducer('Aspose.PDF for .NET 25.2.0');
+            pdfDoc.setAuthor('');
             pdfDoc.setCreationDate(new Date());
             pdfDoc.setModificationDate(new Date());
             
-            // Keywords como array (corrigindo erro)
-            pdfDoc.setKeywords(['voucher', 'viagem', 'turismo', 'agencia']);
+            // Keywords como array vazio conforme especificado
+            pdfDoc.setKeywords([]);
             
             // Metadados XMP simplificados para compatibilidade móvel
             const uuid = this.generateUUID();
@@ -1139,17 +1140,20 @@ class VoucherSystem {
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">
       <dc:title>Voucher PDF</dc:title>
-      <dc:creator>Sistema de Vouchers</dc:creator>
+      <dc:creator>Aspose Pty Ltd.</dc:creator>
       <dc:subject>Documento PDF Voucher</dc:subject>
+      <dc:format>application</dc:format>
     </rdf:Description>
     <rdf:Description rdf:about="" xmlns:pdf="http://ns.adobe.com/pdf/1.3/">
-      <pdf:Producer>PDF-lib</pdf:Producer>
+      <pdf:Producer>Aspose.PDF for .NET 25.2.0</pdf:Producer>
     </rdf:Description>
     <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
       <xmp:CreateDate>${now}</xmp:CreateDate>
       <xmp:ModifyDate>${now}</xmp:ModifyDate>
       <xmp:MetadataDate>${now}</xmp:MetadataDate>
-      <xmp:CreatorTool>Sistema de Vouchers v1.0</xmp:CreatorTool>
+      <xmp:CreatorTool>PDF4me</xmp:CreatorTool>
+      <xmp:Producer>PDF4me</xmp:Producer>
+      <xmp:Creator>PDF4me</xmp:Creator>
     </rdf:Description>
   </rdf:RDF>
 </x:xmpmeta>`;
@@ -1165,16 +1169,16 @@ class VoucherSystem {
             // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
             form.flatten();
 
-            // 6. SALVAR COM CONFIGURAÇÕES OTIMIZADAS PARA DISPOSITIVOS MÓVEIS
-            // Configurações específicas para máxima compatibilidade móvel
+            // 6. SALVAR COM CONFIGURAÇÕES EXATAS CONFORME ESPECIFICADO
+            // Configurações para corresponder aos metadados especificados
             const pdfBytes = await pdfDoc.save({
                 useObjectStreams: false,
                 addDefaultPage: false,
                 updateFieldAppearances: false,
                 objectsPerTick: 50,
-                // Configurações específicas para compatibilidade com WhatsApp
+                // Configurações conforme especificação (Linearized: No)
                 compress: true,
-                linearize: true,
+                linearize: false,
                 prettyPrint: false
             });
 
