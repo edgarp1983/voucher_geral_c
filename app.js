@@ -1057,14 +1057,27 @@ class VoucherSystem {
 
     // Geração de PDF
     async generatePDF() {
-        const voucherData = this.getVoucherFormData();
-        const agencyConfig = this.getAgencyConfig();
+        console.log('🔄 Iniciando geração de PDF...');
         
-        if (!this.validateVoucherData(voucherData)) {
-            return;
+        try {
+            const voucherData = this.getVoucherFormData();
+            console.log('📋 Dados do voucher:', voucherData);
+            
+            const agencyConfig = this.getAgencyConfig();
+            console.log('🏢 Configuração da agência:', agencyConfig);
+            
+            if (!this.validateVoucherData(voucherData)) {
+                console.log('❌ Validação falhou');
+                return;
+            }
+            
+            console.log('✅ Validação passou, criando PDF...');
+            await this.createPDF(voucherData, agencyConfig);
+            
+        } catch (error) {
+            console.error('💥 Erro na função generatePDF:', error);
+            this.showErrorMessage('Erro ao gerar PDF: ' + error.message);
         }
-        
-        await this.createPDF(voucherData, agencyConfig);
     }
 
     async generatePDFFromVoucher(voucherId) {
@@ -1079,7 +1092,15 @@ class VoucherSystem {
 
     async createPDF(voucherData, agencyConfig) {
         try {
+            console.log('🔧 Iniciando createPDF...');
+            console.log('📚 Verificando PDFLib:', typeof PDFLib);
+            
+            if (typeof PDFLib === 'undefined') {
+                throw new Error('PDFLib não está carregado. Verifique se a biblioteca está incluída.');
+            }
+            
             const { PDFDocument } = PDFLib; // Garante que PDFDocument está disponível
+            console.log('📄 PDFDocument disponível:', typeof PDFDocument);
 
             // 1. DEFINIR NOME DO ARQUIVO (sem caracteres especiais, exceto _)
             const safeContractorName = voucherData.contractorName.replace(/[^a-zA-Z0-9]/g, '_');
