@@ -1083,6 +1083,9 @@ class VoucherSystem {
             // Gerar o PDF preenchido
             const pdfBytes = await pdfDoc.save();
             
+            // Definir nome do arquivo antes de usar
+            const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            
             // Achatar o PDF para máxima compatibilidade (especialmente WhatsApp)
             const flattenedPdfBytes = await this.flattenPDF(pdfBytes);
             
@@ -1112,7 +1115,6 @@ class VoucherSystem {
                     writable: false
                 });
             }
-            const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
             
             // Detectar se é dispositivo móvel
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
