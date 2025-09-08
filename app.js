@@ -1097,86 +1097,23 @@ class VoucherSystem {
             const form = pdfDoc.getForm();
             this.fillPDFFields(form, voucherData, agencyConfig);
 
-            // 4. CONFIGURAR METADADOS ESPECÍFICOS CONFORME SOLICITADO
-            // Implementando todos os metadados exatos para máxima compatibilidade
+            // 4. CONFIGURAR METADADOS BÁSICOS PARA COMPATIBILIDADE MÓVEL
+            // Usando apenas metadados essenciais para evitar problemas em dispositivos móveis
             pdfDoc.setTitle('Voucher PDF');
             pdfDoc.setSubject('Documento PDF Voucher');
-            pdfDoc.setAuthor(''); // Vazio conforme especificação
-            pdfDoc.setCreator('Aspose Pty Ltd.');
-            pdfDoc.setProducer('Aspose.PDF for .NET 25.2.0');
+            pdfDoc.setCreator('Sistema de Vouchers');
+            pdfDoc.setProducer('PDF-lib');
             pdfDoc.setCreationDate(new Date());
             pdfDoc.setModificationDate(new Date());
-            pdfDoc.setKeywords(''); // Vazio conforme especificação
-            
-            // Metadados XMP adicionais para máxima compatibilidade
-            // Estes metadados garantem reconhecimento em todos os aplicativos
-            const xmpMetadata = `<?xml version="1.0" encoding="UTF-8"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/">
-  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">
-      <dc:format>application/pdf</dc:format>
-      <dc:title><rdf:Alt><rdf:li xml:lang="x-default">Voucher PDF</rdf:li></rdf:Alt></dc:title>
-      <dc:description><rdf:Alt><rdf:li xml:lang="x-default">Documento PDF Voucher</rdf:li></rdf:Alt></dc:description>
-      <dc:creator><rdf:Seq><rdf:li></rdf:li></rdf:Seq></dc:creator>
-      <dc:subject><rdf:Bag></rdf:Bag></dc:subject>
-    </rdf:Description>
-    <rdf:Description rdf:about="" xmlns:pdf="http://ns.adobe.com/pdf/1.3/">
-      <pdf:Producer>Aspose.PDF for .NET 25.2.0</pdf:Producer>
-      <pdf:Keywords></pdf:Keywords>
-    </rdf:Description>
-    <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
-      <xmp:CreatorTool>Aspose Pty Ltd.</xmp:CreatorTool>
-      <xmp:CreateDate>${new Date().toISOString()}</xmp:CreateDate>
-      <xmp:ModifyDate>${new Date().toISOString()}</xmp:ModifyDate>
-      <xmp:MetadataDate>${new Date().toISOString()}</xmp:MetadataDate>
-    </rdf:Description>
-    <rdf:Description rdf:about="" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/">
-      <xmpMM:DocumentID>uuid:${this.generateUUID()}</xmpMM:DocumentID>
-      <xmpMM:InstanceID>uuid:${this.generateUUID()}</xmpMM:InstanceID>
-    </rdf:Description>
-  </rdf:RDF>
-</x:xmpmeta>`;
-            
-            // Adicionar metadados XMP customizados
-            try {
-                // Metadados customizados para identificação específica
-                const customMetadata = {
-                    'pdf4me:Producer': 'PDF4me',
-                    'pdf4me:Creator': 'PDF4me',
-                    'pdf4me:Category': 'application',
-                    'custom:FileType': 'PDF',
-                    'custom:FileTypeExtension': 'pdf',
-                    'custom:MimeType': 'application/pdf',
-                    'custom:PDFVersion': '1.7',
-                    'custom:Linearized': 'No',
-                    'custom:Encryption': 'Standard V2.3 (128-bit)',
-                    'custom:UserAccess': 'Print, Modify, Copy, Annotate, Fill forms, Extract, Assemble',
-                    'custom:HasXFA': 'No',
-                    'custom:Form': 'AcroForm',
-                    'custom:Javascript': 'no',
-                    'custom:Tagged': 'no',
-                    'custom:Optimized': 'no'
-                };
-                
-                // Aplicar metadados customizados (simulação para compatibilidade)
-                Object.entries(customMetadata).forEach(([key, value]) => {
-                    // Armazenar como comentário interno para referência
-                    console.log(`Metadata: ${key} = ${value}`);
-                });
-            } catch (error) {
-                console.warn('Aviso: Alguns metadados customizados não puderam ser aplicados:', error);
-            }
 
             // 5. "ACHATAR" (FLATTEN) O FORMULÁRIO
             // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
             form.flatten();
 
-            // 6. SALVAR COM CONFIGURAÇÕES ESPECÍFICAS PARA REPLICAR O PDF FUNCIONAL
+            // 6. SALVAR COM CONFIGURAÇÕES OTIMIZADAS PARA DISPOSITIVOS MÓVEIS
             const pdfBytes = await pdfDoc.save({
-                objectsPerTick: 50,
-                addDefaultPage: false,
-                useObjectStreams: false, // PDF 1.7 compatível
-                updateFieldAppearances: false // Manter aparência original após flatten
+                useObjectStreams: false,
+                addDefaultPage: false
             });
 
             // 7. CRIAR O BLOB COM O MIME TYPE CORRETO
