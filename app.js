@@ -1097,14 +1097,48 @@ class VoucherSystem {
             const form = pdfDoc.getForm();
             this.fillPDFFields(form, voucherData, agencyConfig);
 
-            // 4. CONFIGURAR METADADOS BÁSICOS PARA COMPATIBILIDADE MÓVEL
-            // Usando apenas metadados essenciais para evitar problemas em dispositivos móveis
+            // 4. CONFIGURAR METADADOS COMPLETOS COMPATÍVEIS COM MOBILE
+            // Metadados básicos
             pdfDoc.setTitle('Voucher PDF');
             pdfDoc.setSubject('Documento PDF Voucher');
             pdfDoc.setCreator('Sistema de Vouchers');
             pdfDoc.setProducer('PDF-lib');
             pdfDoc.setCreationDate(new Date());
             pdfDoc.setModificationDate(new Date());
+            
+            // Keywords como array (corrigindo erro)
+            pdfDoc.setKeywords(['voucher', 'viagem', 'turismo', 'agencia']);
+            
+            // Metadados XMP simplificados para compatibilidade móvel
+            const uuid = this.generateUUID();
+            const now = new Date().toISOString();
+            
+            const xmpMetadata = `<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:title>Voucher PDF</dc:title>
+      <dc:creator>Sistema de Vouchers</dc:creator>
+      <dc:subject>Documento PDF Voucher</dc:subject>
+    </rdf:Description>
+    <rdf:Description rdf:about="" xmlns:pdf="http://ns.adobe.com/pdf/1.3/">
+      <pdf:Producer>PDF-lib</pdf:Producer>
+    </rdf:Description>
+    <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+      <xmp:CreateDate>${now}</xmp:CreateDate>
+      <xmp:ModifyDate>${now}</xmp:ModifyDate>
+      <xmp:MetadataDate>${now}</xmp:MetadataDate>
+      <xmp:CreatorTool>Sistema de Vouchers v1.0</xmp:CreatorTool>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>`;
+            
+            // Aplicar XMP metadata de forma segura
+            try {
+                pdfDoc.setMetadata(xmpMetadata);
+            } catch (xmpError) {
+                console.warn('XMP metadata não suportado neste ambiente:', xmpError);
+            }
 
             // 5. "ACHATAR" (FLATTEN) O FORMULÁRIO
             // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
