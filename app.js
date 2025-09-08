@@ -1079,20 +1079,36 @@ class VoucherSystem {
             const form = pdfDoc.getForm();
             this.fillPDFFields(form, voucherData, agencyConfig);
 
-            // 4. "ACHATAR" (FLATTEN) O FORMULÁRIO
+            // 4. CONFIGURAR METADADOS BASEADOS NO PDF FUNCIONAL
+            // Replicando exatamente os metadados do PDF que funciona corretamente
+            pdfDoc.setTitle('Voucher PDF');
+            pdfDoc.setSubject('Documento PDF Voucher');
+            pdfDoc.setAuthor(''); // Vazio como no exemplo funcional
+            pdfDoc.setCreator('Aspose Pty Ltd.');
+            pdfDoc.setProducer('Aspose.PDF for .NET 25.2.0');
+            pdfDoc.setCreationDate(new Date());
+            pdfDoc.setModificationDate(new Date());
+            pdfDoc.setKeywords(''); // Vazio como no exemplo funcional
+
+            // 5. "ACHATAR" (FLATTEN) O FORMULÁRIO
             // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
             form.flatten();
 
-            // 5. SALVAR OS BYTES DO PDF FINAL (SEM METADADOS EXTRAS)
-            const pdfBytes = await pdfDoc.save();
+            // 6. SALVAR COM CONFIGURAÇÕES ESPECÍFICAS PARA REPLICAR O PDF FUNCIONAL
+            const pdfBytes = await pdfDoc.save({
+                objectsPerTick: 50,
+                addDefaultPage: false,
+                useObjectStreams: false, // PDF 1.7 compatível
+                updateFieldAppearances: false // Manter aparência original após flatten
+            });
 
-            // 6. CRIAR O BLOB COM O MIME TYPE CORRETO
+            // 7. CRIAR O BLOB COM O MIME TYPE CORRETO
             // Este é o passo crucial que diz ao navegador/celular que este é um arquivo PDF.
             const blob = new Blob([pdfBytes], {
                 type: 'application/pdf'
             });
 
-            // 7. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
+            // 8. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
             // A API de compartilhamento é a melhor opção para celulares.
             if (navigator.share) {
                 try {
