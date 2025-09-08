@@ -1,5 +1,5 @@
 // Service Worker para Sistema de Vouchers
-const CACHE_NAME = 'vouchers-system-v1';
+const CACHE_NAME = 'vouchers-system-v2';
 const urlsToCache = [
   '/',
   '/index.html',
