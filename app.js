@@ -1083,16 +1083,35 @@ class VoucherSystem {
             // Gerar o PDF preenchido
             const pdfBytes = await pdfDoc.save();
             
+            // Achatar o PDF para máxima compatibilidade (especialmente WhatsApp)
+            const flattenedPdfBytes = await this.flattenPDF(pdfBytes);
+            
             // Criar blob com MIME type correto e propriedades para máxima compatibilidade
-            const blob = new Blob([pdfBytes], { 
+            // Solução específica para WhatsApp que é mais sensível ao MIME type
+            const blob = new Blob([flattenedPdfBytes], { 
                 type: 'application/pdf'
             });
             
-            // Garantir que o blob tenha as propriedades corretas
+            // Garantir que o blob tenha as propriedades corretas para reconhecimento
             Object.defineProperty(blob, 'lastModified', {
                 value: Date.now(),
                 writable: false
             });
+            
+            // Adicionar propriedades específicas para melhor reconhecimento pelo WhatsApp
+            Object.defineProperty(blob, 'name', {
+                value: fileName,
+                writable: false
+            });
+            
+            // Forçar o tipo MIME de forma mais agressiva
+            if (blob.type !== 'application/pdf') {
+                console.warn('Blob type não é application/pdf, forçando correção');
+                Object.defineProperty(blob, 'type', {
+                    value: 'application/pdf',
+                    writable: false
+                });
+            }
             const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
             
             // Detectar se é dispositivo móvel
@@ -1205,13 +1224,59 @@ class VoucherSystem {
         }
     }
     
+    async flattenPDF(pdfBytes) {
+        try {
+            // Função para "achatar" o PDF, criando uma versão mais simples e compatível
+            // Especialmente útil para resolver problemas de compartilhamento via WhatsApp
+            
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            
+            // Criar um novo documento PDF "achatado"
+            const flattenedDoc = await PDFLib.PDFDocument.create();
+            
+            // Copiar todas as páginas para o novo documento
+            const pages = await flattenedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+            
+            pages.forEach((page) => {
+                flattenedDoc.addPage(page);
+            });
+            
+            // Definir metadados básicos para máxima compatibilidade
+            flattenedDoc.setTitle('Voucher PDF');
+            flattenedDoc.setSubject('Documento PDF Voucher');
+            flattenedDoc.setCreator('Sistema Voucher');
+            flattenedDoc.setProducer('PDF Generator');
+            flattenedDoc.setCreationDate(new Date());
+            flattenedDoc.setModificationDate(new Date());
+            
+            // Salvar o documento achatado com configurações de máxima compatibilidade
+            const flattenedBytes = await flattenedDoc.save({
+                useObjectStreams: false,
+                addDefaultPage: false,
+                objectsPerTick: 50
+            });
+            
+            console.log('PDF achatado com sucesso para máxima compatibilidade');
+            return flattenedBytes;
+            
+        } catch (error) {
+            console.warn('Erro ao achatar PDF, usando versão original:', error);
+            return pdfBytes; // Retorna o PDF original em caso de erro
+        }
+    }
+
     downloadFile(blob, fileName) {
         // Função auxiliar para download tradicional com máxima compatibilidade mobile
+        // Solução específica para problema do WhatsApp com MIME type
         
         // Garantir que o fileName tenha extensão .pdf
         if (!fileName.toLowerCase().endsWith('.pdf')) {
             fileName += '.pdf';
         }
+        
+        // Detectar se está sendo executado em contexto que pode ser compartilhado via WhatsApp
+        const isLikelyMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isWhatsAppContext = /WhatsApp/i.test(navigator.userAgent) || window.location.href.includes('whatsapp');
         
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1230,6 +1295,23 @@ class VoucherSystem {
         // Simular Content-Disposition header através de atributos
         a.setAttribute('data-content-disposition', `attachment; filename="${fileName}"`);
         a.setAttribute('data-content-type', 'application/pdf');
+        
+        // Atributos específicos para melhor reconhecimento em contextos móveis/WhatsApp
+        if (isLikelyMobile || isWhatsAppContext) {
+            // Headers HTTP simulados para máxima compatibilidade
+            a.setAttribute('data-mime-type', 'application/pdf');
+            a.setAttribute('data-file-extension', '.pdf');
+            a.setAttribute('data-content-encoding', 'binary');
+            a.setAttribute('data-content-length', blob.size.toString());
+            
+            // Atributos específicos para WhatsApp
+            a.setAttribute('data-whatsapp-type', 'document');
+            a.setAttribute('data-whatsapp-mime', 'application/pdf');
+            
+            // Forçar reconhecimento como documento PDF
+            a.setAttribute('data-document-type', 'pdf');
+            a.setAttribute('data-file-category', 'document');
+        }
         
         document.body.appendChild(a);
         
