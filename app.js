@@ -1061,216 +1061,81 @@ class VoucherSystem {
 
     async createPDF(voucherData, agencyConfig) {
         try {
-            // Definir nome do arquivo no início da função
-            const fileName = `voucher_${voucherData.contractorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-            
-            // Carregar o template selecionado
+            const { PDFDocument } = PDFLib; // Garante que PDFDocument está disponível
+
+            // 1. DEFINIR NOME DO ARQUIVO (sem caracteres especiais, exceto _)
+            const safeContractorName = voucherData.contractorName.replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `voucher_${safeContractorName}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+            // 2. CARREGAR O TEMPLATE
             const templateBytes = await this.loadSelectedTemplate(voucherData.selectedTemplate);
-            
             if (!templateBytes) {
-                this.showErrorMessage('Template PDF não encontrado. Selecione um template válido.');
+                this.showErrorMessage('Template PDF não encontrado. Carregue um na tela de configuração.');
                 return;
             }
-            
-            // Obter dados da agência selecionada
-            const selectedAgencyData = this.getSelectedAgencyData(voucherData.selectedAgency);
-            
-            const bytes = new Uint8Array(templateBytes);
-            
-            // Carregar o PDF com PDF-lib
-            const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+
+            // 3. PREENCHER O PDF
+            const pdfDoc = await PDFDocument.load(templateBytes);
             const form = pdfDoc.getForm();
-            
-            // Preencher os campos do formulário
-            this.fillPDFFields(form, voucherData, selectedAgencyData);
-            
-            // Tornar o formulário não editável (flatten)
+            this.fillPDFFields(form, voucherData, agencyConfig);
+
+            // 4. "ACHATAR" (FLATTEN) O FORMULÁRIO
+            // Esta é a melhor prática para máxima compatibilidade. Torna os campos não-editáveis.
             form.flatten();
-            
-            // Gerar o PDF preenchido
+
+            // 5. SALVAR OS BYTES DO PDF FINAL
             const pdfBytes = await pdfDoc.save();
-            
-            // Achatar o PDF para máxima compatibilidade (especialmente WhatsApp)
-            const flattenedPdfBytes = await this.flattenPDF(pdfBytes);
-            
-            // Criar blob com MIME type correto e propriedades para máxima compatibilidade
-            // Solução específica para WhatsApp que é mais sensível ao MIME type
-            const blob = new Blob([flattenedPdfBytes], { 
+
+            // 6. CRIAR O BLOB COM O MIME TYPE CORRETO
+            // Este é o passo crucial que diz ao navegador/celular que este é um arquivo PDF.
+            const blob = new Blob([pdfBytes], {
                 type: 'application/pdf'
             });
-            
-            // Garantir que o blob tenha as propriedades corretas para reconhecimento
-            Object.defineProperty(blob, 'lastModified', {
-                value: Date.now(),
-                writable: false
-            });
-            
-            // Adicionar propriedades específicas para melhor reconhecimento pelo WhatsApp
-            Object.defineProperty(blob, 'name', {
-                value: fileName,
-                writable: false
-            });
-            
-            // Forçar o tipo MIME de forma mais agressiva
-            if (blob.type !== 'application/pdf') {
-                console.warn('Blob type não é application/pdf, forçando correção');
-                Object.defineProperty(blob, 'type', {
-                    value: 'application/pdf',
-                    writable: false
-                });
-            }
-            
-            // Detectar se é dispositivo móvel
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                // Para dispositivos móveis, tentar múltiplas abordagens
-                let success = false;
-                
-                // 1. Tentar API nativa de compartilhamento (mais compatível)
+
+            // 7. LÓGICA DE COMPARTILHAMENTO E DOWNLOAD (MAIS ROBUSTA)
+            // A API de compartilhamento é a melhor opção para celulares.
+            if (navigator.share) {
                 try {
-                    if (navigator.share) {
-                        const file = new File([blob], fileName, { 
-                            type: 'application/pdf',
-                            lastModified: Date.now()
-                        });
-                        
-                        // Verificar se pode compartilhar arquivos
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                files: [file],
-                                title: 'Voucher PDF',
-                                text: 'Compartilhar voucher'
-                            });
-                            success = true;
-                        }
-                    }
-                } catch (shareError) {
-                    console.log('Compartilhamento nativo falhou:', shareError);
-                }
-                
-                // 2. Se compartilhamento falhou, tentar abrir em nova aba com headers corretos
-                if (!success) {
-                    try {
-                        const url = URL.createObjectURL(blob);
-                        
-                        // Criar link temporário com atributos para forçar download
-                        const tempLink = document.createElement('a');
-                        tempLink.href = url;
-                        tempLink.download = fileName;
-                        tempLink.target = '_blank';
-                        tempLink.rel = 'noopener noreferrer';
-                        
-                        // Adicionar ao DOM temporariamente
-                        document.body.appendChild(tempLink);
-                        
-                        // Simular clique
-                        tempLink.click();
-                        
-                        // Remover do DOM
-                        document.body.removeChild(tempLink);
-                        
-                        // Tentar abrir em nova aba também
-                        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-                        
-                        // Limpar URL após um tempo
-                        setTimeout(() => {
-                            URL.revokeObjectURL(url);
-                        }, 15000);
-                        
-                        success = true;
-                        
-                    } catch (openError) {
-                        console.log('Abertura em nova aba falhou:', openError);
-                    }
-                }
-                
-                // 3. Fallback final: download tradicional
-                if (!success) {
-                    const downloadSuccess = this.downloadFile(blob, fileName);
+                    // Criamos um objeto File, que é o formato ideal para a API de compartilhamento
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
                     
-                    if (!downloadSuccess) {
-                        // Último recurso: mostrar mensagem com instruções
-                        this.showErrorMessage('Não foi possível baixar o PDF automaticamente. Tente usar um navegador diferente ou verifique as configurações de download.');
-                        return;
+                    // Verificamos se o navegador pode compartilhar este tipo de arquivo
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Voucher de Viagem',
+                            text: `Segue o voucher para ${voucherData.contractorName}.`
+                        });
+                        this.showSuccessMessage('Voucher compartilhado!');
+                        return; // Encerra a função após o sucesso
                     }
-                }
-                
-                // Mostrar mensagem de sucesso
-                this.showSuccessMessage('PDF gerado! Verifique seus downloads ou aplicativos de PDF.');
-                
-            } else {
-                // Para desktop, usar download tradicional
-                const downloadSuccess = this.downloadFile(blob, fileName);
-                
-                if (downloadSuccess) {
-                    this.showSuccessMessage('PDF baixado com sucesso!');
-                } else {
-                    // Fallback para desktop: tentar abrir em nova aba
-                    try {
-                        const url = URL.createObjectURL(blob);
-                        const newWindow = window.open(url, '_blank');
-                        
-                        if (newWindow) {
-                            this.showSuccessMessage('PDF gerado! Abrindo em nova aba. Use "Salvar como" para baixar.');
-                            setTimeout(() => URL.revokeObjectURL(url), 30000);
-                        } else {
-                            this.showErrorMessage('Não foi possível abrir o PDF. Verifique se o bloqueador de pop-ups está desabilitado.');
-                        }
-                    } catch (openError) {
-                        console.error('Erro ao abrir PDF:', openError);
-                        this.showErrorMessage('Erro ao gerar PDF. Tente novamente.');
-                    }
+                } catch (error) {
+                    console.warn('Compartilhamento nativo falhou, tentando download...', error);
+                    // Se o compartilhamento falhar (ex: usuário cancelou), o código continua para o método de download.
                 }
             }
             
+            // Se a API de compartilhamento não estiver disponível ou falhar, usamos o download tradicional.
+            // Este método é um "truque" padrão para forçar o download no navegador.
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            
+            // Adiciona ao corpo do documento, clica e remove.
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Limpa a URL do objeto para liberar memória.
+            URL.revokeObjectURL(link.href);
+            this.showSuccessMessage('PDF baixado com sucesso!');
+
         } catch (error) {
             console.error('Erro ao gerar PDF:', error);
             this.showErrorMessage('Erro ao gerar PDF: ' + error.message);
         }
     }
     
-    async flattenPDF(pdfBytes) {
-        try {
-            // Função para "achatar" o PDF, criando uma versão mais simples e compatível
-            // Especialmente útil para resolver problemas de compartilhamento via WhatsApp
-            
-            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-            
-            // Criar um novo documento PDF "achatado"
-            const flattenedDoc = await PDFLib.PDFDocument.create();
-            
-            // Copiar todas as páginas para o novo documento
-            const pages = await flattenedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
-            
-            pages.forEach((page) => {
-                flattenedDoc.addPage(page);
-            });
-            
-            // Definir metadados básicos para máxima compatibilidade
-            flattenedDoc.setTitle('Voucher PDF');
-            flattenedDoc.setSubject('Documento PDF Voucher');
-            flattenedDoc.setCreator('Sistema Voucher');
-            flattenedDoc.setProducer('PDF Generator');
-            flattenedDoc.setCreationDate(new Date());
-            flattenedDoc.setModificationDate(new Date());
-            
-            // Salvar o documento achatado com configurações de máxima compatibilidade
-            const flattenedBytes = await flattenedDoc.save({
-                useObjectStreams: false,
-                addDefaultPage: false,
-                objectsPerTick: 50
-            });
-            
-            console.log('PDF achatado com sucesso para máxima compatibilidade');
-            return flattenedBytes;
-            
-        } catch (error) {
-            console.warn('Erro ao achatar PDF, usando versão original:', error);
-            return pdfBytes; // Retorna o PDF original em caso de erro
-        }
-    }
-
     downloadFile(blob, fileName) {
         // Função auxiliar para download tradicional com máxima compatibilidade mobile
         // Solução específica para problema do WhatsApp com MIME type
